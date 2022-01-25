@@ -32,14 +32,17 @@ namespace LuckySpin.Controllers
         }
         
         [HttpPost]
-        public IActionResult Index(Player player) //TODO: Update Index() to receive form data as IndexViewModel
+        public IActionResult Index(Player player) //: Update Index() to receive form data as IndexViewModel
         {
             if (!ModelState.IsValid) { return View(); } //Check for missing data
 
-            //TODO: Complete adding Player data to store in the repoService
+            //: Complete adding Player data to store in the repoService
             repoService.Player = new Player
             {
-                //FirstName = indexVM.FirstName,
+                FirstName = player.FirstName,
+                LuckNumber = player.LuckNumber,
+                Balance = player.Balance,
+                PlayerId = player.PlayerId
             };
 
             return RedirectToAction("Spin");
@@ -47,33 +50,50 @@ namespace LuckySpin.Controllers
 
         /***
          * Spin Action
-         **/  
-               
+         **/
+
         public IActionResult Spin() //Start a Spin WITHOUT data
         {
-         //CHARGE 
-            // TODO: Load Player balance from the repoService
-            decimal balance;
-
-            //TODO: Charge $0.50 to spin
+            //CHARGE 
+            // : Load Player balance from the repoService
 
 
-         //SPIN
-            //TODO: Complete adding data to a new SpinViewModel to gather items for the View
+            //: Charge $0.50 to spin
+            repoService.Player.Balance -= 0.50m;
+            decimal balance = repoService.Player.Balance;
+
+
+            //SPIN
+            //: Complete adding data to a new SpinViewModel to gather items for the View
             SpinViewModel spinVM = new SpinViewModel
             {
-                //CurrentBalance = string.Format(new CultureInfo("en-SG", false), "{0:C2}", balance),
+                CurrentBalance = string.Format(new CultureInfo("en-SG", false), "{0:C2}", balance),
+                FirstName = repoService.Player.FirstName,
+                PlayerLuck = repoService.Player.LuckNumber
             };
 
-         //GAMEPLAY
-            //TODO: Check the Balance to see if the game is over
+            //GAMEPLAY
+            //: Check the Balance to see if the game is over
+            if (balance < 0.50m)
+            {
+                return RedirectToAction("LuckList");
+            }
+            //: Pay $1.00 if Winning
+            if (spinVM.IsWinning)
+            {
+                repoService.Player.Balance += 1.00m;
+                spinVM.CurrentBalance = string.Format(new CultureInfo("en-SG", false), "{0:C2}", repoService.Player.Balance);
+            }
 
-            //TODO: Pay $1.00 if Winning
 
-
-         //UPDATE DATA STORE
+            //UPDATE DATA STORE
             //TODO: Save balance to repoService
-
+            Spin sp = new Spin
+            {
+                player = repoService.Player,
+                isWinning = spinVM.IsWinning
+            };
+            repoService.AddSpin(sp);
 
             //TODO: Use the repoService to add a spin to the repository
 
